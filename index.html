@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DarkTube - Share & Earn</title>
+    <title>DarkTube - Stream & Earn</title>
     
     <!-- Icons & Fonts -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -13,14 +13,12 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
     <style>
-        /* --- 1. VARIABLES & RESET --- */
+        /* --- 1. CSS VARIABLES & RESET --- */
         :root {
             --primary: #ff0055;
             --primary-hover: #d60045;
-            --secondary: #00e5ff;
             --bg-body: #0f0f0f;
             --bg-panel: #1e1e1e;
             --bg-el: #2d2d2d;
@@ -30,19 +28,12 @@
             --header-h: 65px;
             --sidebar-w: 240px;
             --z-modal: 9999;
-        }
-
-        body.light-mode {
-            --bg-body: #f9f9f9;
-            --bg-panel: #ffffff;
-            --bg-el: #e6e6e6;
-            --text-main: #111;
-            --text-muted: #555;
-            --border: #ddd;
+            --z-player: 5000;
+            --z-ad: 6000;
         }
 
         * { margin:0; padding:0; box-sizing:border-box; font-family:'Outfit',sans-serif; }
-        body { background:var(--bg-body); color:var(--text-main); overflow-x:hidden; transition:0.3s; }
+        body { background:var(--bg-body); color:var(--text-main); overflow-x:hidden; }
         a { text-decoration:none; color:inherit; }
         button { cursor:pointer; border:none; outline:none; }
 
@@ -51,52 +42,51 @@
         .btn-primary { background:var(--primary); color:white; }
         .btn-primary:hover { transform:translateY(-2px); box-shadow:0 4px 15px rgba(255,0,85,0.4); }
         .btn-sec { background:var(--bg-el); color:var(--text-main); border:1px solid var(--border); }
-        .btn:hover { opacity:0.9; }
+        .btn:hover { opacity:0.9; border-color:#555; }
 
         .input-box { width:100%; padding:12px; background:var(--bg-body); border:1px solid var(--border); border-radius:8px; color:var(--text-main); margin-bottom:15px; outline:none; }
         .input-box:focus { border-color:var(--primary); }
-        
+        label { display:block; margin-bottom:5px; font-size:12px; color:var(--text-muted); }
+
         /* --- 3. LAYOUT --- */
         header { position:fixed; top:0; left:0; right:0; height:var(--header-h); background:var(--bg-panel); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 24px; z-index:100; }
         
-        aside { position:fixed; top:var(--header-h); left:0; bottom:0; width:var(--sidebar-w); background:var(--bg-panel); border-right:1px solid var(--border); padding:20px 10px; z-index:90; overflow-y:auto; transition:0.3s; }
+        aside { position:fixed; top:var(--header-h); left:0; bottom:0; width:var(--sidebar-w); background:var(--bg-panel); border-right:1px solid var(--border); padding:20px 10px; z-index:90; overflow-y:auto; transition:transform 0.3s; }
         
-        main { margin-top:var(--header-h); margin-left:var(--sidebar-w); padding:24px; min-height:100vh; position:relative; z-index:1; transition:0.3s; }
+        main { margin-top:var(--header-h); margin-left:var(--sidebar-w); padding:24px; min-height:100vh; position:relative; z-index:1; transition:margin 0.3s; }
 
-        /* --- 4. VIDEO GRID (NO THUMBNAIL) --- */
+        /* --- 4. VIDEO GRID --- */
         .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:24px; }
-        .card { cursor:pointer; transition:0.3s; border-radius:12px; overflow:hidden; background:transparent; }
-        .card:hover { transform:translateY(-5px); }
+        .card { cursor:pointer; transition:0.3s; background:var(--bg-panel); border-radius:12px; overflow:hidden; border:1px solid var(--border); }
+        .card:hover { transform:translateY(-5px); border-color:var(--primary); }
         
         .thumb-placeholder { 
             width:100%; aspect-ratio:16/9; 
             background: linear-gradient(135deg, #1f1f1f, #2a2a2a); 
-            border-radius:12px; overflow:hidden; position:relative; 
             display:flex; justify-content:center; align-items:center;
-            border: 1px solid var(--border);
+            border-bottom: 1px solid var(--border); position:relative;
         }
         .thumb-placeholder i { font-size: 40px; color: var(--primary); opacity: 0.8; transition:0.3s; }
         .card:hover .thumb-placeholder i { transform: scale(1.2); color:white; }
         
-        .badge-type { position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.8); color:var(--primary); font-size:10px; padding:2px 6px; border-radius:4px; font-weight:bold; }
-        .meta { padding:12px 5px; display:flex; gap:12px; }
-        .avatar { width:36px; height:36px; border-radius:50%; background:#333; overflow:hidden; flex-shrink:0; }
+        .badge { position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.8); color:var(--primary); font-size:10px; padding:2px 6px; border-radius:4px; font-weight:bold; }
         
-        /* --- 5. PLAYER MODAL & ADS --- */
-        .player-modal { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:5000; display:none; overflow-y:auto; backdrop-filter:blur(5px); }
-        .player-wrapper { width:90%; max-width:1200px; margin:40px auto; display:grid; grid-template-columns:1fr 350px; gap:24px; }
+        /* --- 5. PLAYER MODAL --- */
+        .player-modal { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:var(--z-player); display:none; overflow-y:auto; backdrop-filter:blur(10px); }
+        .player-wrapper { width:95%; max-width:1200px; margin:20px auto; display:grid; grid-template-columns:1fr 350px; gap:24px; }
         
-        .vid-frame { width:100%; aspect-ratio:16/9; background:#000; border-radius:12px; overflow:hidden; position:relative; }
-        iframe, video { width:100%; height:100%; border:none; object-fit:contain; }
+        .vid-frame { width:100%; aspect-ratio:16/9; background:#000; border-radius:12px; overflow:hidden; position:relative; box-shadow:0 0 30px rgba(0,0,0,0.5); }
+        iframe { width:100%; height:100%; border:none; }
         
-        .banner-ad { width:100%; height:90px; background:var(--bg-el); border:1px dashed var(--border); margin:20px 0; display:flex; justify-content:center; align-items:center; color:var(--text-muted); font-size:12px; overflow:hidden; }
+        /* --- 6. AD SYSTEM (POPUNDER) --- */
+        .ad-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.9); z-index:var(--z-ad); display:flex; flex-direction:column; justify-content:center; align-items:center; }
+        .ad-modal { background:var(--bg-panel); padding:40px; border-radius:16px; text-align:center; border:2px solid var(--primary); max-width:500px; width:90%; position:relative; box-shadow:0 0 50px rgba(255,0,85,0.3); }
         
-        /* Mid-Roll Overlay */
-        .rv-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.98); z-index:50; display:flex; flex-direction:column; justify-content:center; align-items:center; }
-        .rv-box { background:var(--bg-panel); padding:30px; border-radius:16px; text-align:center; border:1px solid var(--primary); max-width:400px; box-shadow:0 0 30px rgba(255,0,85,0.2); }
-        .countdown { font-size:48px; font-weight:bold; color:var(--secondary); margin:15px 0; }
-
-        /* --- 6. DASHBOARD & ADMIN --- */
+        .ad-frame { width:100%; height:300px; background:#fff; margin:20px 0; border-radius:8px; display:flex; justify-content:center; align-items:center; color:#000; font-weight:bold; font-size:24px; }
+        
+        .countdown { font-size:60px; font-weight:bold; color:var(--secondary); margin:10px 0; font-family:monospace; }
+        
+        /* --- 7. ADMIN & DASHBOARD --- */
         .stat-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:20px; margin-bottom:30px; }
         .stat-card { background:var(--bg-panel); padding:20px; border-radius:12px; border:1px solid var(--border); }
         .table-wrap { overflow-x:auto; background:var(--bg-panel); border-radius:12px; border:1px solid var(--border); margin-top:20px; }
@@ -104,16 +94,14 @@
         th, td { padding:15px; text-align:left; border-bottom:1px solid var(--border); font-size:14px; }
         th { background:var(--bg-el); color:var(--text-muted); }
 
-        /* --- 7. MODALS (Upload/Auth) --- */
+        /* --- 8. MODALS --- */
         .modal-wrap { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:var(--z-modal); display:none; justify-content:center; align-items:center; backdrop-filter:blur(5px); }
         .modal-wrap.active { display:flex; }
-        .modal-box { background:var(--bg-panel); width:90%; max-width:500px; padding:30px; border-radius:16px; border:1px solid var(--border); position:relative; max-height:90vh; overflow-y:auto; }
+        .modal-box { background:var(--bg-panel); width:90%; max-width:500px; padding:30px; border-radius:16px; border:1px solid var(--border); position:relative; }
 
         /* --- RESPONSIVE --- */
         @media(max-width:900px) { aside { transform:translateX(-100%); } aside.show { transform:translateX(0); } main { margin-left:0; } }
         @media(max-width:1000px) { .player-wrapper { grid-template-columns:1fr; } }
-        @media(max-width:600px) { .search-bar { display:none; } }
-
         .hidden { display:none !important; }
         .nav-link { padding:12px 20px; display:flex; gap:15px; align-items:center; cursor:pointer; color:var(--text-main); border-radius:10px; margin-bottom:5px; transition:0.2s; }
         .nav-link:hover, .nav-link.active { background:var(--bg-el); color:var(--primary); }
@@ -122,7 +110,7 @@
 <body>
 
     <!-- TOAST -->
-    <div id="toast" style="position:fixed; bottom:20px; right:20px; background:#222; color:#fff; padding:12px 24px; border-radius:8px; z-index:10000; display:none; border-left:4px solid var(--primary); box-shadow:0 5px 20px rgba(0,0,0,0.4);"></div>
+    <div id="toast" style="position:fixed; bottom:20px; right:20px; background:#222; color:#fff; padding:15px 30px; border-radius:8px; z-index:10000; display:none; border-left:5px solid var(--primary); box-shadow:0 5px 20px rgba(0,0,0,0.5); font-weight:bold;"></div>
 
     <!-- HEADER -->
     <header>
@@ -133,14 +121,8 @@
             </div>
         </div>
 
-        <div class="search-bar" style="flex:1; max-width:500px; margin:0 20px; display:flex;">
-            <input type="text" class="input-box" style="margin:0; border-radius:20px 0 0 20px;" placeholder="Search videos...">
-            <button class="btn-sec" style="border-radius:0 20px 20px 0; border-left:none;"><i class="fa fa-search"></i></button>
-        </div>
-
         <div style="display:flex; gap:10px; align-items:center;">
-            <button class="btn-sec" onclick="document.body.classList.toggle('light-mode')" style="border-radius:50%; width:40px; height:40px; padding:0; justify-content:center;"><i class="fa fa-adjust"></i></button>
-            <button class="btn-sec" onclick="app.openUpload()" style="border-radius:50%; width:40px; height:40px; padding:0; justify-content:center;"><i class="fa fa-video"></i></button>
+            <button class="btn-sec" onclick="app.openUpload()" style="border-radius:50%; width:40px; height:40px; padding:0; justify-content:center;" title="Upload Link"><i class="fa fa-link"></i></button>
             
             <div id="auth-btn"><button class="btn-primary" onclick="app.openAuth()">Login</button></div>
             <div id="user-btn" class="hidden" onclick="app.nav('dashboard')" style="cursor:pointer">
@@ -152,7 +134,6 @@
     <!-- SIDEBAR -->
     <aside id="sidebar">
         <div class="nav-link active" onclick="app.nav('home')"><i class="fa fa-home"></i> Home</div>
-        <div class="nav-link" onclick="app.nav('trending')"><i class="fa fa-fire"></i> Trending</div>
         <div class="nav-link" onclick="app.nav('dashboard')"><i class="fa fa-chart-pie"></i> Dashboard</div>
         <hr style="border-color:var(--border); margin:15px 0;">
         <div id="adm-link" class="nav-link hidden" onclick="app.nav('admin')" style="color:var(--primary)"><i class="fa fa-shield-halved"></i> Admin Panel</div>
@@ -162,10 +143,10 @@
     <!-- MAIN VIEW -->
     <main id="view-port"></main>
 
-    <!-- PLAYER OVERLAY (Supports Share Links) -->
+    <!-- PLAYER OVERLAY -->
     <div id="player-modal" class="player-modal">
         <div style="display:flex; justify-content:space-between; padding:15px 24px; background:var(--bg-panel); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100;">
-            <div class="logo" style="font-size:18px; font-weight:bold; color:white;">DarkTube Player</div>
+            <div style="font-size:18px; font-weight:bold;">DarkTube Player</div>
             <button class="btn-sec" onclick="app.closePlayer()"><i class="fa fa-times"></i> Close</button>
         </div>
         <div id="player-content" class="player-wrapper">
@@ -187,38 +168,27 @@
         </div>
     </div>
 
-    <!-- 2. Upload (No Thumbnail) -->
+    <!-- 2. Upload (StreamTape Only) -->
     <div id="mod-up" class="modal-wrap">
         <div class="modal-box">
-            <div style="display:flex; justify-content:space-between; margin-bottom:20px"><h2>Upload Video</h2> <i class="fa fa-times" onclick="ui.closeMod()" style="cursor:pointer"></i></div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px"><h2>Submit StreamTape Link</h2> <i class="fa fa-times" onclick="ui.closeMod()" style="cursor:pointer"></i></div>
             <form id="f-up">
                 <label>Video Title</label><input type="text" id="v-title" class="input-box" required>
                 <label>Description</label><textarea id="v-desc" class="input-box" rows="2"></textarea>
                 
-                <label>Source</label>
-                <select id="v-source" class="input-box" onchange="ui.togUp()">
-                    <option value="file">File Upload (Firebase)</option>
-                    <option value="drive">Google Drive Link</option>
-                </select>
+                <label>StreamTape Video Link</label>
+                <input type="text" id="v-link" class="input-box" placeholder="https://streamtape.com/v/..." required>
+                <small style="color:var(--text-muted); display:block; margin-top:-10px; margin-bottom:10px;">* Only StreamTape links supported.</small>
 
-                <div id="grp-file"><label>Video File</label><input type="file" id="v-vid-file" class="input-box" accept="video/*"></div>
-                <div id="grp-drive" class="hidden"><label>Drive Link</label><input type="text" id="v-drive-url" class="input-box" placeholder="https://drive.google.com/file/d/..."></div>
-
-                <div style="display:flex; gap:10px; margin-bottom:15px; align-items:center; background:var(--bg-el); padding:10px; border-radius:8px;">
+                <div style="display:flex; gap:10px; align-items:center; background:var(--bg-el); padding:10px; border-radius:8px; margin-bottom:15px;">
                     <i class="fa fa-clock" style="color:var(--primary)"></i>
                     <div style="flex:1">
-                        <label style="margin:0; font-size:12px;">Ads Interval (Minutes)</label>
-                        <input type="number" id="v-interval" class="input-box" style="margin:0; padding:8px;" value="3" min="1">
+                        <label style="margin:0; font-size:12px;">Ads Interval (Seconds)</label>
+                        <input type="number" id="v-interval" class="input-box" style="margin:0; padding:8px;" value="60" min="10">
                     </div>
                 </div>
 
-                <div id="prog-wrap" class="hidden" style="margin-bottom:15px;">
-                    <div style="height:8px; background:#333; border-radius:4px; overflow:hidden;">
-                        <div id="prog-bar" style="height:100%; width:0%; background:var(--primary); transition:0.3s"></div>
-                    </div>
-                    <p id="prog-txt" style="text-align:right; font-size:12px; margin-top:5px;">0%</p>
-                </div>
-                <button class="btn-primary" style="width:100%">Publish</button>
+                <button class="btn-primary" style="width:100%">Publish Video</button>
             </form>
         </div>
     </div>
@@ -229,8 +199,7 @@
             <div style="display:flex; justify-content:space-between; margin-bottom:20px"><h2>Apply Monetization</h2> <i class="fa fa-times" onclick="ui.closeMod()" style="cursor:pointer"></i></div>
             <form id="f-mon">
                 <label>Full Name</label><input type="text" class="input-box" required>
-                <label>Method</label>
-                <select id="mon-m" class="input-box"><option>bKash</option><option>Nagad</option><option>Rocket</option><option>Bank</option></select>
+                <label>Method</label><select id="mon-m" class="input-box"><option>bKash</option><option>Nagad</option><option>Rocket</option><option>Bank</option></select>
                 <label>Account Number</label><input type="text" id="mon-n" class="input-box" required>
                 <button class="btn-primary" style="width:100%">Submit Application</button>
             </form>
@@ -252,7 +221,6 @@
         if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const authSvc = firebase.auth();
-        const storage = firebase.storage();
 
         // --- 2. GLOBAL STATE ---
         const state = { 
@@ -260,12 +228,17 @@
             profile: null, 
             isAdmin: false, 
             settings: { 
-                banner: '<p>Admin: Set Banner Code</p>', 
-                popunder: '', 
-                rvRate: 0.50, 
-                spamLimit: 30,
-                minViews: 50
-            } 
+                adTime: 5, // 5 seconds mandatory watch
+                rvRate: 0.50, // BDT per view
+                spamLimit: 30, // mins
+                minViews: 50 // eligibility
+            },
+            adSession: {
+                count: 0,
+                max: 2,
+                timer: null,
+                active: false
+            }
         };
 
         // --- 3. AUTH & INIT ---
@@ -285,34 +258,21 @@
                 
                 // Load Settings
                 db.collection('settings').doc('general').get().then(d => {
-                    if(d.exists) {
-                        state.settings = {...state.settings, ...d.data()};
-                        if(state.settings.popunder) {
-                            let s = document.createElement('script'); 
-                            s.innerHTML = state.settings.popunder; 
-                            document.body.appendChild(s);
-                        }
-                    }
+                    if(d.exists) state.settings = {...state.settings, ...d.data()};
                 });
 
-                // SHARE LINK HANDLER: Check URL for ?v=VIDEO_ID
+                // URL Handler for Share Links
                 const params = new URLSearchParams(window.location.search);
-                const videoId = params.get('v');
-                if(videoId) {
-                    app.loadVideoById(videoId);
-                } else {
-                    app.nav('home');
-                }
+                const vidId = params.get('v');
+                if(vidId) app.loadVideoById(vidId);
+                else app.nav('home');
             },
             fetchProfile: async (u) => {
                 let ref = db.collection('users').doc(u.uid);
                 let d = await ref.get();
                 if(!d.exists) {
                     let role = u.email === 'admin@darktube.com' ? 'admin' : 'user';
-                    let p = { 
-                        email: u.email, role, views: 0, wallet: 0, 
-                        monStatus: 'none', spamCount: 0, joined: new Date().toISOString() 
-                    };
+                    let p = { email: u.email, role, views: 0, wallet: 0, monStatus: 'none', spamCount: 0 };
                     await ref.set(p);
                     state.profile = p;
                 } else {
@@ -337,7 +297,7 @@
             switch: () => { auth.loginMode = !auth.loginMode; }
         };
 
-        // --- 4. NAVIGATION & APP LOGIC ---
+        // --- 4. APP LOGIC ---
         const app = {
             nav: async (page, data = null) => {
                 const vp = document.getElementById('view-port');
@@ -347,25 +307,19 @@
                 // --- HOME ---
                 if(page === 'home') {
                     window.history.pushState({}, "", "/");
-                    
                     let s = await db.collection('videos').orderBy('createdAt', 'desc').limit(20).get();
-                    let h = `<div class="banner-ad">${state.settings.banner}</div><div class="grid">`;
+                    let h = `<div class="grid">`;
                     s.forEach(d => {
                         let v = d.data();
                         h += `
                         <div class="card" onclick="app.loadVideoById('${d.id}')">
                             <div class="thumb-placeholder">
                                 <i class="fa fa-play-circle"></i>
-                                <span class="badge-type">${v.videoType === 'drive' ? 'DRIVE' : 'HD'}</span>
+                                <span class="badge">STREAMTAPE</span>
                             </div>
-                            <div style="padding:10px;">
-                                <div style="display:flex; gap:10px;">
-                                    <img src="https://ui-avatars.com/api/?name=${v.uploaderName}" style="width:30px;height:30px;border-radius:50%;">
-                                    <div>
-                                        <h4 style="font-size:15px; margin-bottom:4px;">${v.title}</h4>
-                                        <p style="font-size:12px; color:var(--text-muted)">${v.uploaderName} • ${v.views} views</p>
-                                    </div>
-                                </div>
+                            <div style="padding:15px;">
+                                <h4 style="font-size:15px; margin-bottom:5px;">${v.title}</h4>
+                                <p style="font-size:12px; color:var(--text-muted)">${v.uploaderName}</p>
                             </div>
                         </div>`;
                     });
@@ -375,7 +329,7 @@
                 // --- DASHBOARD ---
                 else if(page === 'dashboard') {
                     if(!state.user) return app.openAuth();
-                    if(!state.profile) await auth.fetchProfile(state.user);
+                    await auth.fetchProfile(state.user);
                     let p = state.profile;
                     
                     vp.innerHTML = `
@@ -388,16 +342,13 @@
                     </div>
                     ${p.monStatus === 'none' && p.views >= state.settings.minViews ? `<button class="btn btn-primary" onclick="document.getElementById('mod-mon').classList.add('active')" style="margin-top:20px;">Apply Monetization</button>` : ''}
                     ${p.wallet >= 100 ? `<button class="btn btn-sec" onclick="app.withdraw()" style="margin-top:20px;">Withdraw Funds</button>` : ''}
-                    <h3 style="margin-top:30px;">My Uploads</h3>
+                    <h3 style="margin-top:30px;">My Videos</h3>
                     <div id="my-vids" class="grid" style="margin-top:15px;"></div>`;
                     
                     let vs = await db.collection('videos').where('uploaderId','==',state.user.uid).get();
                     let vh = '';
                     vs.forEach(d => {
-                        vh += `<div class="card">
-                            <div class="thumb-placeholder"><i class="fa fa-play"></i></div>
-                            <div style="padding:10px;"><h5>${d.data().title}</h5></div>
-                        </div>`;
+                        vh += `<div class="card"><div class="thumb-placeholder"><i class="fa fa-play"></i></div><div style="padding:10px;"><h5>${d.data().title}</h5></div></div>`;
                     });
                     document.getElementById('my-vids').innerHTML = vh || '<p>No videos found.</p>';
                 }
@@ -417,7 +368,7 @@
                 }
             },
 
-            // --- PLAYER SYSTEM (Universal & Shareable) ---
+            // --- PLAYER & STREAMTAPE LOGIC ---
             loadVideoById: async (vidId) => {
                 const newUrl = `${window.location.origin}/?v=${vidId}`;
                 window.history.pushState({path: newUrl}, '', newUrl);
@@ -429,60 +380,121 @@
                 document.getElementById('player-modal').style.display = 'block';
                 app.handleView(vidId, data.uploaderId);
 
-                let playerHTML = '';
-                if(data.videoType === 'drive') {
-                    let embedUrl = app.getDriveEmbed(data.videoSrc);
-                    playerHTML = `<iframe src="${embedUrl}" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
-                } else {
-                    playerHTML = `<video id="player" controls autoplay style="width:100%; height:100%"><source src="${data.videoSrc}" type="video/mp4"></video>`;
-                }
-
+                // StreamTape Embed URL
+                let embedUrl = data.videoSrc.replace('/v/', '/e/');
+                
                 const pc = document.getElementById('player-content');
                 pc.innerHTML = `
                     <div>
-                        <div class="vid-frame" id="vid-container">${playerHTML}</div>
-                        <div class="banner-ad">${state.settings.banner}</div>
+                        <div class="vid-frame" id="vid-container">
+                            <iframe src="${embedUrl}" width="100%" height="100%" allowfullscreen allow="autoplay" scrolling="no" frameborder="0"></iframe>
+                        </div>
                         <h2 style="margin-top:15px; font-size:22px;">${data.title}</h2>
                         <div style="display:flex; justify-content:space-between; margin-top:10px; border-bottom:1px solid var(--border); padding-bottom:15px;">
                             <div style="display:flex; gap:10px; align-items:center;">
                                 <img src="https://ui-avatars.com/api/?name=${data.uploaderName}" style="width:40px;height:40px;border-radius:50%;">
                                 <div><h4>${data.uploaderName}</h4><p style="color:var(--text-muted);font-size:12px;">${data.views} Views</p></div>
                             </div>
-                            <div style="display:flex; gap:10px;">
-                                <button class="btn btn-sec" onclick="app.shareLink('${vidId}')"><i class="fa fa-share"></i> Share</button>
-                                <button class="btn btn-primary">Subscribe</button>
-                            </div>
+                            <button class="btn btn-sec" onclick="app.shareLink('${vidId}')"><i class="fa fa-share"></i> Share</button>
                         </div>
                         <p style="margin-top:15px; color:var(--text-muted); line-height:1.5;">${data.description || ''}</p>
                     </div>
                     <div><h3>Up Next</h3><div id="rel" style="margin-top:15px;">Loading...</div></div>`;
 
-                let rs = await db.collection('videos').limit(6).get();
+                // Load Related
+                let rs = await db.collection('videos').limit(5).get();
                 let rh = '';
                 rs.forEach(d => {
                     if(d.id !== vidId) {
                         let r = d.data();
                         rh += `<div style="display:flex; gap:10px; margin-bottom:15px; cursor:pointer;" onclick="app.loadVideoById('${d.id}')">
-                            <div style="width:120px; height:70px; background:#1a1a1a; border-radius:8px; overflow:hidden; display:flex; justify-content:center; align-items:center;">
-                                <i class="fa fa-play" style="color:#555"></i>
-                            </div>
-                            <div><h5 style="font-size:14px;">${r.title}</h5><p style="font-size:12px; color:#aaa">${r.uploaderName}</p></div>
+                            <div style="width:100px; height:60px; background:#222; border-radius:8px; display:flex; justify-content:center; align-items:center;"><i class="fa fa-play"></i></div>
+                            <div><h5 style="font-size:14px;">${r.title}</h5></div>
                         </div>`;
                     }
                 });
                 document.getElementById('rel').innerHTML = rh;
-                app.initAdSystem(data.uploaderId, data.adsInterval || 3);
+
+                // Reset Ad Session & Start Timer
+                state.adSession = { count: 0, max: 2, timer: null, active: false };
+                app.initAdSystem(data.uploaderId, data.adsInterval || 60);
             },
 
-            closePlayer: () => {
-                document.getElementById('player-modal').style.display = 'none';
-                document.getElementById('player-content').innerHTML = '';
-                window.history.pushState({}, "", "/");
+            // --- AD SYSTEM (MANDATORY 5s WATCH) ---
+            initAdSystem: (uid, intervalSec) => {
+                console.log(`Ads scheduled every ${intervalSec} seconds.`);
+                // Since StreamTape uses iframe, we can't detect 'play' event easily.
+                // We use a simple interval that assumes user is watching if player is open.
+                
+                if(state.adSession.timer) clearInterval(state.adSession.timer);
+                
+                state.adSession.timer = setInterval(() => {
+                    // Check if player is open and limit not reached
+                    if(document.getElementById('player-modal').style.display === 'block' && 
+                       state.adSession.count < state.adSession.max && 
+                       !state.adSession.active) {
+                        
+                        app.triggerAd(uid);
+                    }
+                }, intervalSec * 1000);
             },
 
-            shareLink: (id) => {
-                const url = `${window.location.origin}/?v=${id}`;
-                navigator.clipboard.writeText(url).then(() => ui.toast("Link Copied!"));
+            triggerAd: (uid) => {
+                state.adSession.active = true;
+                const con = document.getElementById('vid-container');
+                if(!con) return;
+
+                const div = document.createElement('div');
+                div.className = 'ad-overlay';
+                div.innerHTML = `
+                    <div class="ad-modal">
+                        <h2>Sponsored Ad Break</h2>
+                        <p>Watch ad for ${state.settings.adTime} seconds to continue.</p>
+                        <button class="btn btn-primary" id="watch-ad-btn" style="margin-top:15px; font-size:16px;">Watch Ad to Continue</button>
+                    </div>`;
+                con.appendChild(div);
+
+                document.getElementById('watch-ad-btn').onclick = () => {
+                    const modal = div.querySelector('.ad-modal');
+                    // Mock Ad Content (Inside the modal)
+                    modal.innerHTML = `
+                        <h3>Ad Playing...</h3>
+                        <div class="ad-frame">BUY PREMIUM NOW!</div>
+                        <div class="countdown">${state.settings.adTime}</div>
+                        <p style="color:var(--warning)">Do not close!</p>
+                    `;
+
+                    let timeLeft = state.settings.adTime;
+                    let adTimer = setInterval(async () => {
+                        timeLeft--;
+                        if(modal.querySelector('.countdown')) modal.querySelector('.countdown').innerText = timeLeft;
+                        
+                        if(timeLeft <= 0) {
+                            clearInterval(adTimer);
+                            // Verify Completion
+                            modal.innerHTML = `
+                                <h2 style="color:var(--success)">Ad Completed!</h2>
+                                <p>Thank you for supporting the creator.</p>
+                                <button class="btn btn-sec" id="resume-btn">Resume Video</button>
+                            `;
+                            
+                            // Update Earnings
+                            let u = await db.collection('users').doc(uid).get();
+                            if(u.data().monStatus === 'active') {
+                                await db.collection('users').doc(uid).update({
+                                    wallet: firebase.firestore.FieldValue.increment(state.settings.rvRate)
+                                });
+                                ui.toast(`Creator earned ৳${state.settings.rvRate}`);
+                            }
+
+                            document.getElementById('resume-btn').onclick = () => {
+                                div.remove();
+                                state.adSession.count++;
+                                state.adSession.active = false;
+                            };
+                        }
+                    }, 1000);
+                };
             },
 
             // --- ADMIN LOGIC ---
@@ -491,19 +503,18 @@
                 c.innerHTML = 'Loading...';
                 if(tab === 'users') {
                     let s = await db.collection('users').get();
-                    let h = `<div class="table-con"><table><tr><th>Email</th><th>Views</th><th>Spam</th><th>Status</th><th>Action</th></tr>`;
+                    let h = `<div class="table-con"><table><tr><th>Email</th><th>Views</th><th>Status</th><th>Action</th></tr>`;
                     s.forEach(d => {
                         let u = d.data();
-                        h += `<tr><td>${u.email}</td><td>${u.views}</td><td>${u.spamCount}</td><td>${u.monStatus}</td><td>${u.monStatus==='pending' ? `<button class="btn btn-primary" onclick="app.act('appr','${d.id}')">Approve</button>` : '-'}</td></tr>`;
+                        h += `<tr><td>${u.email}</td><td>${u.views}</td><td>${u.monStatus}</td><td>${u.monStatus==='pending' ? `<button class="btn btn-primary" onclick="app.act('appr','${d.id}')">Approve</button>` : '-'}</td></tr>`;
                     });
                     c.innerHTML = h + '</table></div>';
                 }
                 else if(tab === 'settings') {
                     c.innerHTML = `
-                    <div style="background:var(--bg-panel); padding:20px; border-radius:10px; max-width:600px;">
-                        <label>Banner HTML</label><textarea id="s-ban" class="input-box">${state.settings.banner}</textarea>
-                        <label>Popunder JS</label><textarea id="s-pop" class="input-box">${state.settings.popunder}</textarea>
-                        <label>RV Rate</label><input type="number" id="s-rate" class="input-box" value="${state.settings.rvRate}">
+                    <div class="stat-card" style="max-width:600px;">
+                        <label>RV Rate (BDT)</label><input type="number" id="s-rate" class="input-box" value="${state.settings.rvRate}">
+                        <label>Ad Watch Time (Sec)</label><input type="number" id="s-time" class="input-box" value="${state.settings.adTime}">
                         <label>Spam Limit (Min)</label><input type="number" id="s-spam" class="input-box" value="${state.settings.spamLimit}">
                         <button class="btn btn-primary" onclick="app.saveSet()">Save Settings</button>
                     </div>`;
@@ -513,7 +524,7 @@
                     let h = `<div class="table-con"><table><tr><th>User</th><th>Amount</th><th>Method</th><th>Action</th></tr>`;
                     s.forEach(d => {
                         let w = d.data();
-                        h += `<tr><td>${w.email}</td><td>${w.amount}</td><td>${w.method} (${w.number})</td><td><button class="btn btn-primary" onclick="app.act('pay','${d.id}')">Pay</button></td></tr>`;
+                        h += `<tr><td>${w.email}</td><td>${w.amount}</td><td>${w.method}</td><td><button class="btn btn-primary" onclick="app.act('pay','${d.id}')">Pay</button></td></tr>`;
                     });
                     c.innerHTML = h + '</table></div>';
                 }
@@ -522,56 +533,46 @@
             // --- UPLOAD LOGIC ---
             uploadVideo: async (e) => {
                 e.preventDefault();
-                const btn = e.target.querySelector('button'); btn.disabled = true;
-                const title = document.getElementById('v-title').value;
-                const desc = document.getElementById('v-desc').value;
-                const source = document.getElementById('v-source').value;
-                const interval = parseInt(document.getElementById('v-interval').value) || 3;
-                let videoUrl = '';
+                let title = document.getElementById('v-title').value;
+                let desc = document.getElementById('v-desc').value;
+                let link = document.getElementById('v-link').value;
+                let interval = parseInt(document.getElementById('v-interval').value);
 
-                try {
-                    document.getElementById('prog-wrap').classList.remove('hidden');
-                    if(source === 'file') {
-                        const vidFile = document.getElementById('v-vid-file').files[0];
-                        if(!vidFile) throw new Error("Select a video file");
-                        const ref = storage.ref(`videos/${Date.now()}_${vidFile.name}`);
-                        const task = ref.put(vidFile);
-                        task.on('state_changed', s => {
-                            let p = (s.bytesTransferred / s.totalBytes) * 100;
-                            document.getElementById('prog-bar').style.width = p + '%';
-                            document.getElementById('prog-txt').innerText = Math.round(p) + '%';
-                        });
-                        await task;
-                        videoUrl = await ref.getDownloadURL();
-                    } else {
-                        videoUrl = document.getElementById('v-drive-url').value;
-                        if(!videoUrl) throw new Error("Enter Drive Link");
-                    }
+                if(!link.includes('streamtape.com')) return ui.toast("Only StreamTape links allowed!");
 
-                    await db.collection('videos').add({
-                        title: title, description: desc, videoSrc: videoUrl, videoType: source,
-                        adsInterval: interval, views: 0, uploaderId: state.user.uid,
-                        uploaderName: state.user.email.split('@')[0], createdAt: Date.now()
-                    });
+                await db.collection('videos').add({
+                    title: title,
+                    description: desc,
+                    videoSrc: link,
+                    videoType: 'streamtape',
+                    adsInterval: interval,
+                    maxAds: 2,
+                    views: 0,
+                    uploaderId: state.user.uid,
+                    uploaderName: state.user.email.split('@')[0],
+                    createdAt: Date.now()
+                });
 
-                    ui.closeMod(); ui.toast("Uploaded Successfully!"); app.nav('home');
-                } catch(err) { ui.toast(err.message); }
-                btn.disabled = false;
+                ui.closeMod(); ui.toast("Video Published!"); app.nav('home');
             },
 
-            // --- HELPERS & ADS ---
-            getDriveEmbed: (url) => {
-                let id = "";
-                if(url.includes('/file/d/')) id = url.split('/file/d/')[1].split('/')[0];
-                else if(url.includes('id=')) id = url.split('id=')[1].split('&')[0];
-                return `https://drive.google.com/file/d/${id}/preview?autoplay=1`;
+            // --- HELPERS ---
+            closePlayer: () => {
+                document.getElementById('player-modal').style.display = 'none';
+                document.getElementById('player-content').innerHTML = '';
+                if(state.adSession.timer) clearInterval(state.adSession.timer);
+                window.history.pushState({}, "", "/");
             },
-            
+            shareLink: (id) => {
+                const url = `${window.location.origin}/?v=${id}`;
+                navigator.clipboard.writeText(url).then(() => ui.toast("Link Copied!"));
+            },
             handleView: async (vidId, uId) => {
                 const key = 'v_' + vidId;
                 const last = localStorage.getItem(key);
                 const now = Date.now();
                 const limit = (state.settings.spamLimit || 30) * 60000;
+                
                 if(last && (now - last < limit)) {
                     await db.collection('users').doc(uId).update({spamCount: firebase.firestore.FieldValue.increment(1)});
                 } else {
@@ -580,52 +581,14 @@
                     await db.collection('users').doc(uId).update({views: firebase.firestore.FieldValue.increment(1)});
                 }
             },
-
-            initAdSystem: (uid, intervalMins) => {
-                let shown = false;
-                setTimeout(() => {
-                    if(!shown && document.getElementById('vid-container')) {
-                        shown = true;
-                        app.showRV(uid);
-                    }
-                }, intervalMins * 60 * 1000); 
-            },
-
-            showRV: (uid) => {
-                const con = document.getElementById('vid-container');
-                if(!con) return;
-                const div = document.createElement('div');
-                div.className = 'rv-overlay';
-                div.innerHTML = `<div class="rv-box"><h3>Sponsored Ad</h3><p>Support creator</p><button class="btn btn-primary" id="rv-btn">Watch (5s)</button></div>`;
-                con.appendChild(div);
-
-                document.getElementById('rv-btn').onclick = () => {
-                    window.open('https://google.com', '_blank'); 
-                    let t = 5;
-                    document.querySelector('.rv-box').innerHTML = `<div class="countdown">${t}</div>`;
-                    let i = setInterval(async () => {
-                        t--; if(document.querySelector('.countdown')) document.querySelector('.countdown').innerText = t;
-                        if(t <= 0) {
-                            clearInterval(i); div.remove();
-                            let u = await db.collection('users').doc(uid).get();
-                            if(u.data().monStatus === 'active') {
-                                await db.collection('users').doc(uid).update({wallet: firebase.firestore.FieldValue.increment(state.settings.rvRate)});
-                                ui.toast(`Ad Revenue: ৳${state.settings.rvRate}`);
-                            }
-                        }
-                    }, 1000);
-                }
-            },
-
             act: async (t,id) => {
                 if(t==='appr') { await db.collection('users').doc(id).update({monStatus:'active'}); ui.toast("Approved"); app.adm('users'); }
                 if(t==='pay') { await db.collection('withdrawals').doc(id).update({status:'paid'}); ui.toast("Marked Paid"); app.adm('withdraw'); }
             },
             saveSet: async () => {
                 let s = {
-                    banner: document.getElementById('s-ban').value,
-                    popunder: document.getElementById('s-pop').value,
                     rvRate: parseFloat(document.getElementById('s-rate').value),
+                    adTime: parseInt(document.getElementById('s-time').value),
                     spamLimit: parseInt(document.getElementById('s-spam').value)
                 };
                 await db.collection('settings').doc('general').set(s);
@@ -651,11 +614,6 @@
         const ui = {
             toggleSidebar: () => document.getElementById('sidebar').classList.toggle('show'),
             closeMod: () => document.querySelectorAll('.modal-wrap').forEach(e=>e.classList.remove('active')),
-            togUp: () => {
-                let t = document.getElementById('v-source').value;
-                document.getElementById('grp-file').className = t==='file' ? '' : 'hidden';
-                document.getElementById('grp-drive').className = t==='drive' ? '' : 'hidden';
-            },
             head: (log) => {
                 document.getElementById('auth-btn').classList.toggle('hidden', log);
                 document.getElementById('user-btn').classList.toggle('hidden', !log);
