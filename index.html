@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DarkTube - Stream & Earn</title>
+    <title>DarkTube - StreamTape Edition</title>
     
-    <!-- External Assets -->
+    <!-- Icons & Fonts -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Firebase SDKs (Compat v9) -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -29,16 +29,13 @@
             --sidebar-w: 240px;
             --z-modal: 9999;
             --z-player: 5000;
-            --z-ad-layer: 6000;
+            --z-ad: 6000;
         }
 
         * { margin:0; padding:0; box-sizing:border-box; font-family:'Outfit',sans-serif; }
         body { background:var(--bg-body); color:var(--text-main); overflow-x:hidden; }
         a { text-decoration:none; color:inherit; }
         button { cursor:pointer; border:none; outline:none; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--bg-body); }
-        ::-webkit-scrollbar-thumb { background: var(--bg-el); border-radius: 4px; }
 
         /* --- 2. COMPONENTS --- */
         .btn { padding:10px 20px; border-radius:25px; font-weight:600; font-size:13px; display:inline-flex; align-items:center; gap:8px; transition:0.2s; white-space:nowrap; }
@@ -81,24 +78,14 @@
         .vid-frame { width:100%; aspect-ratio:16/9; background:#000; border-radius:12px; overflow:hidden; position:relative; box-shadow:0 0 30px rgba(0,0,0,0.5); }
         iframe { width:100%; height:100%; border:none; }
         
-        /* --- 6. AD SYSTEM (IN-SITE POPUNDER) --- */
-        .ad-blocker-overlay {
-            position: absolute; inset: 0; background: rgba(0,0,0,0.8); z-index: 20; 
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            backdrop-filter: blur(5px);
-        }
-        .ad-modal-box {
-            background: var(--bg-panel); padding: 30px; border-radius: 12px; 
-            border: 2px solid var(--primary); text-align: center; max-width: 500px; width: 90%;
-            box-shadow: 0 0 50px rgba(255, 0, 85, 0.3);
-        }
-        .ad-content-area {
-            background: #fff; color: #000; height: 250px; margin: 20px 0; border-radius: 8px;
-            display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold;
-            position: relative; overflow: hidden;
-        }
-        .countdown-timer { font-size: 40px; font-weight: bold; color: var(--primary); margin: 10px 0; }
-
+        /* --- 6. AD SYSTEM (POPUNDER) --- */
+        .ad-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.9); z-index:var(--z-ad); display:flex; flex-direction:column; justify-content:center; align-items:center; }
+        .ad-modal { background:var(--bg-panel); padding:40px; border-radius:16px; text-align:center; border:2px solid var(--primary); max-width:500px; width:90%; position:relative; box-shadow:0 0 50px rgba(255,0,85,0.3); }
+        
+        .ad-frame { width:100%; height:300px; background:#fff; margin:20px 0; border-radius:8px; display:flex; justify-content:center; align-items:center; color:#000; font-weight:bold; font-size:24px; }
+        
+        .countdown { font-size:60px; font-weight:bold; color:var(--secondary); margin:10px 0; font-family:monospace; }
+        
         /* --- 7. ADMIN & DASHBOARD --- */
         .stat-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:20px; margin-bottom:30px; }
         .stat-card { background:var(--bg-panel); padding:20px; border-radius:12px; border:1px solid var(--border); }
@@ -191,7 +178,8 @@
                 
                 <label>StreamTape Video Link</label>
                 <input type="text" id="v-link" class="input-box" placeholder="https://streamtape.com/v/..." required>
-                
+                <small style="color:var(--text-muted); display:block; margin-top:-10px; margin-bottom:10px;">* Only StreamTape links supported.</small>
+
                 <div style="display:flex; gap:10px; align-items:center; background:var(--bg-el); padding:10px; border-radius:8px; margin-bottom:15px;">
                     <i class="fa fa-clock" style="color:var(--primary)"></i>
                     <div style="flex:1">
@@ -221,13 +209,14 @@
     <script>
         // --- 1. FIREBASE CONFIG ---
         const firebaseConfig = {
-            apiKey: "AIzaSyBFkgyBFb9t7Bmr0cJIq8uaFW7pEAWeULM",
-            authDomain: "dark-tube-d60b9.firebaseapp.com",
-            projectId: "dark-tube-d60b9",
-            storageBucket: "dark-tube-d60b9.firebasestorage.app",
-            messagingSenderId: "905609236488",
-            appId: "1:905609236488:web:4f512879126c18fd2d01bd",
-            measurementId: "G-34NVTXEJCV"
+            apiKey: "AIzaSyBkb32FKiQdvxCj8QsTmWCS5NfZfn6zElE",
+            authDomain: "darktubexs.firebaseapp.com",
+            databaseURL: "https://darktubexs-default-rtdb.firebaseio.com",
+            projectId: "darktubexs",
+            storageBucket: "darktubexs.firebasestorage.app",
+            messagingSenderId: "527560123118",
+            appId: "1:527560123118:web:3637d681bde352415dc9ff",
+            measurementId: "G-ZF38RNFTX8"
         };
         
         if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
@@ -380,7 +369,7 @@
                 }
             },
 
-            // --- PLAYER LOGIC ---
+            // --- PLAYER & STREAMTAPE LOGIC ---
             loadVideoById: async (vidId) => {
                 const newUrl = `${window.location.origin}/?v=${vidId}`;
                 window.history.pushState({path: newUrl}, '', newUrl);
@@ -392,7 +381,8 @@
                 document.getElementById('player-modal').style.display = 'block';
                 app.handleView(vidId, data.uploaderId);
 
-                // Convert link to embed
+                // StreamTape Embed URL Logic
+                // If user pasted 'view' link, convert to 'embed'
                 let embedUrl = data.videoSrc;
                 if(embedUrl.includes('/v/')) embedUrl = embedUrl.replace('/v/', '/e/');
                 
@@ -428,16 +418,19 @@
                 });
                 document.getElementById('rel').innerHTML = rh;
 
-                // Reset & Start Ad
-                state.adSession = { count: 0, max: data.maxAds || 2, timer: null, active: false };
+                // Reset Ad Session & Start Timer
+                state.adSession = { count: 0, max: 2, timer: null, active: false };
                 app.initAdSystem(data.uploaderId, data.adsInterval || 60);
             },
 
-            // --- AD SYSTEM (CRITICAL) ---
+            // --- AD SYSTEM (MANDATORY 5s WATCH) ---
             initAdSystem: (uid, intervalSec) => {
+                console.log(`Ads scheduled every ${intervalSec} seconds.`);
+                
                 if(state.adSession.timer) clearInterval(state.adSession.timer);
                 
                 state.adSession.timer = setInterval(() => {
+                    // Check if player is open and limit not reached
                     if(document.getElementById('player-modal').style.display === 'block' && 
                        state.adSession.count < state.adSession.max && 
                        !state.adSession.active) {
@@ -453,46 +446,48 @@
                 if(!con) return;
 
                 const div = document.createElement('div');
-                div.className = 'ad-blocker-overlay';
+                div.className = 'ad-overlay';
                 div.innerHTML = `
-                    <div class="ad-modal-box">
-                        <h2>⚠️ Ad Break</h2>
-                        <p>Watch ad for <span style="color:var(--primary)">${state.settings.adTime} seconds</span> to continue.</p>
-                        <button class="btn btn-primary" id="watch-ad-btn" style="margin-top:15px;">Watch Ad to Continue</button>
+                    <div class="ad-modal">
+                        <h2>Sponsored Ad Break</h2>
+                        <p>Watch ad for ${state.settings.adTime} seconds to continue.</p>
+                        <button class="btn btn-primary" id="watch-ad-btn" style="margin-top:15px; font-size:16px;">Watch Ad to Continue</button>
                     </div>`;
                 con.appendChild(div);
 
                 document.getElementById('watch-ad-btn').onclick = () => {
-                    const box = div.querySelector('.ad-modal-box');
-                    box.innerHTML = `
+                    const modal = div.querySelector('.ad-modal');
+                    // Mock Ad Content (Inside the modal)
+                    modal.innerHTML = `
                         <h3>Ad Playing...</h3>
-                        <div class="ad-content-area">ADS GO HERE</div>
-                        <div class="countdown-timer">${state.settings.adTime}</div>
-                        <p style="color:var(--warning)">Please wait...</p>
+                        <div class="ad-frame">BUY PREMIUM NOW!</div>
+                        <div class="countdown">${state.settings.adTime}</div>
+                        <p style="color:var(--warning)">Do not close!</p>
                     `;
 
                     let timeLeft = state.settings.adTime;
                     let adTimer = setInterval(async () => {
                         timeLeft--;
-                        box.querySelector('.countdown-timer').innerText = timeLeft;
+                        if(modal.querySelector('.countdown')) modal.querySelector('.countdown').innerText = timeLeft;
                         
                         if(timeLeft <= 0) {
                             clearInterval(adTimer);
-                            // Credit Earning
+                            // Verify Completion
+                            modal.innerHTML = `
+                                <h2 style="color:var(--success)">Ad Completed!</h2>
+                                <p>Thank you for supporting the creator.</p>
+                                <button class="btn btn-sec" id="resume-btn">Resume Video</button>
+                            `;
+                            
+                            // Update Earnings
                             let u = await db.collection('users').doc(uid).get();
                             if(u.data().monStatus === 'active') {
                                 await db.collection('users').doc(uid).update({
                                     wallet: firebase.firestore.FieldValue.increment(state.settings.rvRate)
                                 });
-                                ui.toast(`Creator Earned ৳${state.settings.rvRate}`);
+                                ui.toast(`Creator earned ৳${state.settings.rvRate}`);
                             }
 
-                            box.innerHTML = `
-                                <h2 style="color:var(--success)">Completed!</h2>
-                                <p>Thanks for watching.</p>
-                                <button class="btn btn-sec" id="resume-btn" style="margin-top:10px;">Resume Video</button>
-                            `;
-                            
                             document.getElementById('resume-btn').onclick = () => {
                                 div.remove();
                                 state.adSession.count++;
